@@ -2,6 +2,7 @@ from pathlib import Path
 
 from basic_pitch.inference import predict
 
+from app.config import settings
 from app.pipeline.note_models import Note
 
 _MIN_RESIDUAL_SECONDS = 0.01  # tránh tạo mảnh nốt vụn khi trim đoạn chồng lấn
@@ -49,6 +50,10 @@ def select_melody_skyline(notes: list[Note]) -> list[Note]:
 def extract_raw_notes(audio_path: Path) -> list[Note]:
     """Chạy Basic Pitch trên file audio đã chuẩn hóa, trả về danh sách nốt giai điệu
     chính (đã áp dụng skyline để đảm bảo đơn âm), sắp xếp theo thời gian bắt đầu.
+
+    Nốt dưới `settings.MELODY_MIN_MIDI_PITCH` bị loại trước khi chạy skyline — nốt
+    bass/hợp âm giữ (sustain) ở quãng trầm không phải ứng viên hợp lý cho giai điệu
+    chính, kể cả khi nó là nốt "cao nhất" đang vang tại một thời điểm nào đó.
     """
     _, _, note_events = predict(str(audio_path))
 
@@ -60,6 +65,7 @@ def extract_raw_notes(audio_path: Path) -> list[Note]:
             confidence=_clip_confidence(amplitude),
         )
         for start, end, pitch_midi, amplitude, _pitch_bend in note_events
+        if pitch_midi >= settings.MELODY_MIN_MIDI_PITCH
     ]
 
     return select_melody_skyline(notes)

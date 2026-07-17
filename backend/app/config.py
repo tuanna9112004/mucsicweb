@@ -22,6 +22,11 @@ class Settings:
     MIN_NOTE_DURATION_MS: float = 60.0
     MIN_NOTE_CONFIDENCE: float = 0.25
 
+    # Nốt dưới ngưỡng này (G3) bị loại khỏi danh sách ứng viên giai điệu trước khi
+    # chạy skyline — tránh nốt bass/hợp âm giữ (sustain) bị chọn nhầm làm "giai điệu"
+    # chỉ vì nó là nốt cao nhất đang vang tại thời điểm không có bè trên nào khác.
+    MELODY_MIN_MIDI_PITCH: int = 55
+
     QUANTIZE_UNITS_BEATS: dict = field(
         default_factory=lambda: {"none": None, "1/4": 1.0, "1/8": 0.5, "1/16": 0.25}
     )

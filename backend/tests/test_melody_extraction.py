@@ -53,6 +53,26 @@ def test_skyline_drops_lower_note_fully_engulfed():
     assert result[0].pitch_midi == 72
 
 
+def test_extract_raw_notes_filters_out_bass_register_notes(monkeypatch, tmp_path):
+    # (start, end, pitch_midi, amplitude, pitch_bend) — hình dạng thật của note_events
+    # do basic_pitch.inference.predict trả về.
+    fake_note_events = [
+        (0.0, 0.5, 40, 0.8, None),  # E2, quá trầm -> phải bị loại
+        (0.0, 0.5, 67, 0.7, None),  # G4, giữ lại
+        (1.0, 1.5, 50, 0.6, None),  # D3, dưới ngưỡng 55 -> phải bị loại
+        (1.0, 1.5, 72, 0.6, None),  # C5, giữ lại
+    ]
+
+    def fake_predict(audio_path):
+        return None, None, fake_note_events
+
+    monkeypatch.setattr("app.pipeline.melody_extraction.predict", fake_predict)
+
+    notes = extract_raw_notes(tmp_path / "fake.wav")
+
+    assert [n.pitch_midi for n in notes] == [67, 72]
+
+
 @pytest.mark.slow
 def test_extract_raw_notes_matches_known_pitches(synth_melody_path, synth_melody_ground_truth):
     notes = extract_raw_notes(synth_melody_path)

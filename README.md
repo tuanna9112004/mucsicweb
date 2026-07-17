@@ -62,6 +62,7 @@ Bỏ qua các test tích hợp chậm (cần chạy Basic Pitch thật):
 ## File mẫu để thử nghiệm
 
 - `samples/jtwayne-pianos-by-jtwayne-7-174717.mp3` — piano đơn, ~19 giây, dùng để thử nghiệm thủ công toàn bộ luồng qua giao diện web.
+- `samples/farran_ez-minimal-piano-underscore-456148.mp3` — piano hòa âm dày (chords + bass giữ dài), ~26 giây, dùng để kiểm tra khả năng lọc nốt bass khỏi giai điệu chính (`MELODY_MIN_MIDI_PITCH`).
 - `backend/tests/fixtures/synth_melody_120bpm.wav` — giai điệu tổng hợp (sinh bằng `backend/tests/fixtures/generate_fixture.py`), dùng cho test tự động, có ground-truth biết trước (8 nốt, 120 BPM).
 - `backend/scripts/debug_pipeline.py` — chạy pipeline phân tích trực tiếp qua CLI (không qua web UI), hữu ích để debug nhanh:
   ```powershell

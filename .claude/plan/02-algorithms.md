@@ -25,6 +25,10 @@ Khác với dự kiến ban đầu (gắn beat ngay sau khi lấy nốt thô), *
 
 Với input đã đơn âm sẵn (vd fixture tổng hợp, hoặc guitar/vocal một bè), skyline không có gì để trim — hàm chạy qua như no-op.
 
+**Bug phát hiện qua phản hồi người dùng thực tế + đã sửa (2026-07-17)**: với piano chơi hòa âm dày (hợp âm giữ/sustain ở bè trầm trong khi bè trên thay đổi), skyline thuần túy "nốt cao nhất thắng" khiến nốt bass **nhảy vào dòng giai điệu** bất cứ khi nào không có bè trên nào đang vang tại thời điểm đó — tạo ra "giai điệu" nhảy lung tung giữa quãng trầm và quãng cao, nghe không tự nhiên. Test với file `farran_ez-minimal-piano-underscore-456148.mp3` (piano "minimal underscore", hòa âm rải + bè trầm giữ dài): phát hiện nốt D#2 (midi=39) được giữ vang suốt ~6 giây, bị skyline chọn làm giai điệu bất cứ khi nào bè trên im lặng.
+
+**Fix**: thêm `settings.MELODY_MIN_MIDI_PITCH = 55` (G3) — lọc bỏ mọi nốt dưới ngưỡng này khỏi danh sách ứng viên **trước khi** chạy skyline (trong `melody_extraction.extract_raw_notes`), không phải sau. Nốt bass không còn là ứng viên giai điệu nữa, kể cả khi nó là nốt "cao nhất" đang vang. Kết quả thực nghiệm: file farran giảm từ 51 xuống 34 nốt (loại sạch các nốt bass D#2/A#1...), file jtwayne giảm từ 53 xuống 42 nốt (loại G#2/D#3/C3) — cả hai đều mượt hơn, không còn nốt trầm xen lẫn bất thường. Ngưỡng 55 (G3, ngay dưới middle C) là heuristic — có thể cần điều chỉnh nếu gặp bài có giai điệu chính nằm ở quãng trầm hơn (hiếm trong nhạc pop/piano thông thường).
+
 Cấu trúc `note_events` thực tế từ `predict()` (đã xác minh, khớp đúng thiết kế fallback ban đầu): `list[tuple[start_time_seconds, end_time_seconds, pitch_midi, amplitude, pitch_bend_list_or_None]]`. Không cần dùng activation posterior nội bộ phức tạp — `amplitude` (phần tử thứ 4) đã là giá trị 0–1 hợp lý dùng trực tiếp làm `confidence` nguồn.
 
 ## 4a. Gắn nốt (đã làm sạch) vào lưới beat của librosa

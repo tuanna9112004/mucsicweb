@@ -2,6 +2,10 @@
 
 Cập nhật file này (đánh dấu `[x]`) ngay khi hoàn thành một mục, để phiên làm việc sau biết chính xác đang ở đâu mà không cần suy đoán lại từ đầu.
 
+## Sau MVP — cải tiến từ phản hồi thực tế
+
+- [x] **Lọc nốt bass khỏi giai điệu** (2026-07-17) — người dùng phản ánh kết quả trên file `farran_ez-minimal-piano-underscore-456148.mp3` (piano hòa âm dày) "không đúng ý", chẩn đoán ra nốt bass giữ dài bị skyline chọn nhầm làm giai điệu. Thêm `MELODY_MIN_MIDI_PITCH=55` trong `config.py`, lọc trong `melody_extraction.extract_raw_notes` trước khi skyline chạy. Xem chi tiết [`02-algorithms.md`](02-algorithms.md#4a-pre-chọn-giai-điệu-chính-từ-đầu-ra-đa-âm-của-basic-pitch-phát-hiện-khi-implement). Test mới: `test_extract_raw_notes_filters_out_bass_register_notes`. Toàn bộ suite: **59/59 pass** sau fix.
+
 ## Stage 0 — Môi trường
 
 - [x] `winget install --id Python.Python.3.10 -e` → Python 3.10.11 (2026-07-17). Lưu ý: Windows Store alias vẫn che `python` trên PATH — dùng full path `C:\Users\MSI\AppData\Local\Programs\Python\Python310\python.exe` để tạo venv thay vì gọi `python` trực tiếp.
