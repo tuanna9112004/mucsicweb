@@ -1,8 +1,13 @@
 from dataclasses import dataclass, field
+from pathlib import Path
+
+BACKEND_ROOT = Path(__file__).resolve().parent.parent
 
 
 @dataclass(frozen=True)
 class Settings:
+    UPLOAD_ROOT: Path = BACKEND_ROOT / "uploads"
+
     ALLOWED_EXTENSIONS: tuple[str, ...] = (".mp3", ".wav")
     MAX_FILE_SIZE_BYTES: int = 30 * 1024 * 1024  # 30 MB
     MAX_DURATION_SECONDS: float = 90.0

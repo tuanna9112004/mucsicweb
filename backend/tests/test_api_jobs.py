@@ -1,0 +1,121 @@
+import pytest
+
+
+def _upload_fixture(api_client, synth_melody_path):
+    with open(synth_melody_path, "rb") as f:
+        response = api_client.post(
+            "/api/upload",
+            files={"file": ("synth_melody_120bpm.wav", f, "audio/wav")},
+        )
+    assert response.status_code == 200
+    return response.json()["job_id"]
+
+
+@pytest.mark.slow
+def test_full_pipeline_flow_upload_analyze_poll_download(api_client, synth_melody_path):
+    job_id = _upload_fixture(api_client, synth_melody_path)
+
+    analyze_response = api_client.post(
+        f"/api/jobs/{job_id}/analyze",
+        json={"target_bpm": 138, "quantize": "1/8"},
+    )
+    assert analyze_response.status_code == 200
+
+    status_response = api_client.get(f"/api/jobs/{job_id}")
+    assert status_response.status_code == 200
+    status_data = status_response.json()
+    assert status_data["status"] == "done"
+    assert status_data["progress_pct"] == 100
+    assert status_data["result_summary"]["note_count"] == 8
+    assert status_data["result_summary"]["target_bpm"] == 138
+    assert all(step["status"] == "done" for step in status_data["steps"])
+
+    notes_response = api_client.get(f"/api/jobs/{job_id}/notes")
+    assert notes_response.status_code == 200
+    assert len(notes_response.json()) == 8
+
+    midi_response = api_client.get(f"/api/jobs/{job_id}/download/midi")
+    assert midi_response.status_code == 200
+    assert midi_response.headers["content-type"] == "audio/midi"
+
+    json_response = api_client.get(f"/api/jobs/{job_id}/download/json")
+    assert json_response.status_code == 200
+    assert json_response.headers["content-type"] == "application/json"
+
+
+def test_get_unknown_job_returns_404(api_client):
+    response = api_client.get("/api/jobs/does-not-exist")
+
+    assert response.status_code == 404
+
+
+def test_analyze_unknown_job_returns_404(api_client):
+    response = api_client.post(
+        "/api/jobs/does-not-exist/analyze", json={"target_bpm": 138, "quantize": "none"}
+    )
+
+    assert response.status_code == 404
+
+
+def test_analyze_rejects_out_of_range_bpm(api_client, synth_melody_path):
+    job_id = _upload_fixture(api_client, synth_melody_path)
+
+    response = api_client.post(
+        f"/api/jobs/{job_id}/analyze", json={"target_bpm": 999, "quantize": "none"}
+    )
+
+    assert response.status_code == 422
+
+
+def test_analyze_rejects_invalid_quantize_mode(api_client, synth_melody_path):
+    job_id = _upload_fixture(api_client, synth_melody_path)
+
+    response = api_client.post(
+        f"/api/jobs/{job_id}/analyze", json={"target_bpm": 138, "quantize": "1/32"}
+    )
+
+    assert response.status_code == 422
+
+
+def test_analyze_returns_409_when_already_running(api_client, synth_melody_path):
+    from app.core.job_models import JobStatus
+    from app.core.job_store import job_store
+
+    job_id = _upload_fixture(api_client, synth_melody_path)
+    job_store.get(job_id).status = JobStatus.RUNNING
+
+    response = api_client.post(
+        f"/api/jobs/{job_id}/analyze", json={"target_bpm": 138, "quantize": "none"}
+    )
+
+    assert response.status_code == 409
+
+
+def test_notes_endpoint_returns_409_before_analysis_done(api_client, synth_melody_path):
+    job_id = _upload_fixture(api_client, synth_melody_path)
+
+    response = api_client.get(f"/api/jobs/{job_id}/notes")
+
+    assert response.status_code == 409
+
+
+def test_cancel_unknown_job_returns_404(api_client):
+    response = api_client.post("/api/jobs/does-not-exist/cancel")
+
+    assert response.status_code == 404
+
+
+def test_cancel_known_job_returns_200(api_client, synth_melody_path):
+    job_id = _upload_fixture(api_client, synth_melody_path)
+
+    response = api_client.post(f"/api/jobs/{job_id}/cancel")
+
+    assert response.status_code == 200
+
+
+def test_download_midi_returns_404_before_analysis_done(api_client, synth_melody_path):
+    job_id = _upload_fixture(api_client, synth_melody_path)
+
+    response = api_client.get(f"/api/jobs/{job_id}/download/midi")
+
+    assert response.status_code == 404

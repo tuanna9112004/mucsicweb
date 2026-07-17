@@ -38,3 +38,35 @@ class AnalysisResult(BaseModel):
 class AnalyzeRequest(BaseModel):
     target_bpm: int = Field(ge=135, le=140, default=138)
     quantize: Literal["none", "1/4", "1/8", "1/16"] = "none"
+
+
+class UploadResponse(BaseModel):
+    job_id: str
+    filename: str
+    duration_seconds: float
+    size_bytes: int
+
+
+class HealthResponse(BaseModel):
+    ffmpeg_found: bool
+    ffprobe_found: bool
+
+
+class StepStatusModel(BaseModel):
+    key: str
+    label: str
+    status: Literal["pending", "active", "done", "error"]
+
+
+class ErrorInfoModel(BaseModel):
+    code: str
+    message: str
+
+
+class JobStatusResponse(BaseModel):
+    job_id: str
+    status: Literal["uploaded", "running", "done", "error", "cancelled"]
+    steps: list[StepStatusModel]
+    progress_pct: int
+    error: ErrorInfoModel | None = None
+    result_summary: AnalysisResult | None = None
