@@ -19,6 +19,10 @@ class Settings:
     DEFAULT_TARGET_BPM: int = 138
 
     MERGE_GAP_MS: float = 40.0
+    # Chỉ gộp 2 nốt liền kề cùng cao độ khi nốt ngắn hơn có độ dài < tỷ lệ này so với
+    # nốt dài hơn — phân biệt "mảnh nốt vỡ do nhiễu" (rất ngắn so với nốt chính) với
+    # "nốt lặp lại có chủ đích" (độ dài tương đương nhau, không nên gộp).
+    MERGE_MAX_DURATION_RATIO: float = 0.3
     MIN_NOTE_DURATION_MS: float = 60.0
     MIN_NOTE_CONFIDENCE: float = 0.25
 
