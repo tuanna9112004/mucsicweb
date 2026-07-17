@@ -1,6 +1,8 @@
+from dataclasses import replace
+
 from app.config import settings
 from app.core.errors import NoMelodyDetectedError
-from app.pipeline.note_models import Note
+from app.music.note_models import Note, OriginalTiming
 
 
 def _merge_adjacent_same_pitch(
@@ -10,22 +12,21 @@ def _merge_adjacent_same_pitch(
         return []
 
     merge_gap_seconds = merge_gap_ms / 1000.0
-    notes_sorted = sorted(notes, key=lambda n: n.start_time_seconds)
+    notes_sorted = sorted(notes, key=lambda n: n.original.onset_seconds)
     merged: list[Note] = [notes_sorted[0]]
 
     for note in notes_sorted[1:]:
         last = merged[-1]
-        gap_seconds = note.start_time_seconds - last.end_time_seconds
+        gap_seconds = note.original.onset_seconds - last.original.offset_seconds
 
-        longer = max(last.duration_seconds, note.duration_seconds)
-        shorter = min(last.duration_seconds, note.duration_seconds)
+        longer = max(last.original.duration_seconds, note.original.duration_seconds)
+        shorter = min(last.original.duration_seconds, note.original.duration_seconds)
         duration_ratio = shorter / longer if longer > 0 else 1.0
 
-        # Basic Pitch chỉ tạo một note event mới khi onset activation của nó vượt
-        # ngưỡng tin cậy (mặc định 0.5) — nghĩa là hai nốt cùng cao độ đứng sát nhau
-        # (dù gap=0) thường là hai lần đánh nốt thật (vd nốt lặp lại), không phải một
-        # nốt bị vỡ do nhiễu. Chỉ gộp khi một nốt ngắn bất thường so với nốt kia —
-        # dấu hiệu đặc trưng của mảnh nốt vỡ thật sự, không phải nốt lặp lại có chủ đích.
+        # Basic Pitch chỉ tạo note event mới khi onset activation vượt ngưỡng tin
+        # cậy — hai nốt cùng cao độ đứng sát nhau (dù gap=0) thường là hai lần
+        # đánh nốt thật (vd nốt lặp lại), không phải một nốt bị vỡ do nhiễu. Chỉ
+        # gộp khi một nốt ngắn bất thường so với nốt kia.
         should_merge = (
             note.pitch_midi == last.pitch_midi
             and gap_seconds <= merge_gap_seconds
@@ -33,14 +34,22 @@ def _merge_adjacent_same_pitch(
         )
 
         if should_merge:
-            total_duration = last.duration_seconds + note.duration_seconds
+            total_duration = last.original.duration_seconds + note.original.duration_seconds
             if total_duration > 0:
-                last.confidence = (
-                    last.confidence * last.duration_seconds
-                    + note.confidence * note.duration_seconds
+                new_amplitude = (
+                    last.model_amplitude * last.original.duration_seconds
+                    + note.model_amplitude * note.original.duration_seconds
                 ) / total_duration
-            last.end_time_seconds = note.end_time_seconds
-            last.merged = True
+            else:
+                new_amplitude = last.model_amplitude
+            merged[-1] = replace(
+                last,
+                original=OriginalTiming(
+                    onset_seconds=last.original.onset_seconds, offset_seconds=note.original.offset_seconds
+                ),
+                model_amplitude=new_amplitude,
+                merged=True,
+            )
         else:
             merged.append(note)
 
@@ -54,10 +63,12 @@ def clean_notes(
     min_duration_ms: float | None = None,
     min_confidence: float | None = None,
 ) -> list[Note]:
-    """Gộp các nốt liền kề cùng cao độ, sau đó loại nốt quá ngắn hoặc confidence thấp.
+    """Gộp các nốt liền kề cùng cao độ, sau đó loại nốt quá ngắn hoặc model_amplitude
+    thấp. CHỈ dùng cho track đơn âm (melody) — không áp dụng cho full polyphonic
+    track, nơi nhiều nốt cùng onset (hợp âm) là dữ liệu hợp lệ cần giữ nguyên.
 
-    Thứ tự merge-trước-filter-sau là chủ đích: một lần merge có thể "cứu" hai mảnh nốt
-    quá ngắn thành một nốt đủ dài và hợp lệ.
+    Thứ tự merge-trước-filter-sau là chủ đích: một lần merge có thể "cứu" hai mảnh
+    nốt quá ngắn thành một nốt đủ dài và hợp lệ. Không mutate note đầu vào.
     """
     merge_gap_ms = settings.MERGE_GAP_MS if merge_gap_ms is None else merge_gap_ms
     max_merge_duration_ratio = (
@@ -74,7 +85,8 @@ def clean_notes(
     cleaned = [
         note
         for note in merged
-        if note.duration_seconds >= min_duration_seconds and note.confidence >= min_confidence
+        if note.original.duration_seconds >= min_duration_seconds
+        and note.model_amplitude >= min_confidence
     ]
 
     if not cleaned:

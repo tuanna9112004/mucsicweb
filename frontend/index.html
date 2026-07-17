@@ -9,11 +9,15 @@
 <body>
   <header class="app-header">
     <h1>Melody Tempo Analyzer</h1>
-    <p class="subtitle">Phân tích giai điệu chính từ file âm thanh thành nốt MIDI đã căn nhịp</p>
+    <p class="subtitle">Phân tích piano đa âm — giai điệu, bass, hợp âm — thành nốt MIDI</p>
   </header>
 
   <div id="ffmpeg-banner" class="banner banner-error" hidden>
     Không tìm thấy FFmpeg trên máy. Vui lòng cài đặt FFmpeg rồi khởi động lại ứng dụng trước khi phân tích file.
+  </div>
+  <div id="piano-model-banner" class="banner banner-info" hidden>
+    Chưa cài model piano chuyên dụng (piano_transcription_inference) — chế độ "Piano Accurate" sẽ tự
+    dùng Basic Pitch làm dự phòng (độ chính xác polyphony/pedal thấp hơn). Xem README để cài đặt.
   </div>
 
   <main class="app-main">
@@ -40,6 +44,18 @@
     <section id="section-config" class="card" hidden>
       <h2>2. Cấu hình phân tích</h2>
       <div class="form-row">
+        <label for="select-mode">Chế độ phân tích</label>
+        <select id="select-mode">
+          <option value="piano_accurate" selected>Piano Accurate (đa âm, đầy đủ)</option>
+          <option value="melody_quick">Melody Quick (giai điệu đơn âm, nhanh)</option>
+        </select>
+      </div>
+      <p class="field-hint" id="mode-hint"></p>
+      <div class="form-row">
+        <label for="chk-keep-original-bpm">Giữ nguyên tempo gốc</label>
+        <input type="checkbox" id="chk-keep-original-bpm" />
+      </div>
+      <div class="form-row">
         <label for="select-bpm">Tempo đầu ra (BPM)</label>
         <select id="select-bpm">
           <option value="135">135</option>
@@ -53,10 +69,12 @@
       <div class="form-row">
         <label for="select-quantize">Mức căn nhịp (quantize)</label>
         <select id="select-quantize">
-          <option value="none">Không căn</option>
+          <option value="none" selected>Không căn</option>
           <option value="1/4">1/4</option>
-          <option value="1/8" selected>1/8</option>
+          <option value="1/8">1/8</option>
           <option value="1/16">1/16</option>
+          <option value="1/8T">1/8 (triplet)</option>
+          <option value="1/16T">1/16 (triplet)</option>
         </select>
       </div>
       <div class="form-actions">
@@ -70,7 +88,7 @@
       <ol id="stepper" class="stepper"></ol>
       <div class="progress-bar"><div id="progress-fill" class="progress-fill"></div></div>
       <div class="form-actions">
-        <button type="button" id="btn-cancel" class="btn-secondary" disabled>Hủy phân tích</button>
+        <button type="button" id="btn-cancel" class="btn-secondary">Hủy phân tích</button>
       </div>
       <p id="processing-error" class="banner banner-error" hidden></p>
     </section>
@@ -78,13 +96,37 @@
     <section id="section-results" class="card" hidden>
       <h2>4. Kết quả phân tích</h2>
       <dl id="results-summary" class="results-summary"></dl>
+      <p id="quality-warnings" class="banner banner-warning" hidden></p>
       <p class="disclaimer">
         Kết quả phân tích tự động, mang tính chất tham khảo — không đảm bảo chính xác 100% với mọi loại bài hát.
       </p>
     </section>
 
+    <section id="section-harmony" class="card" hidden>
+      <h2>5. Hợp âm theo thời gian</h2>
+      <div class="table-scroll table-scroll-short">
+        <table id="chords-table">
+          <thead><tr><th>Bắt đầu (s)</th><th>Kết thúc (s)</th><th>Hợp âm</th><th>Bass</th><th>Confidence</th></tr></thead>
+          <tbody id="chords-table-body"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="section-pianoroll" class="card" hidden>
+      <h2>6. Piano roll (xem trước, chỉ đọc)</h2>
+      <div class="pianoroll-legend">
+        <span class="legend-item"><span class="legend-swatch legend-full"></span>Full</span>
+        <span class="legend-item"><span class="legend-swatch legend-melody"></span>Melody</span>
+        <span class="legend-item"><span class="legend-swatch legend-bass"></span>Bass</span>
+      </div>
+      <div class="pianoroll-scroll">
+        <canvas id="piano-roll-canvas"></canvas>
+      </div>
+    </section>
+
     <section id="section-notes" class="card" hidden>
-      <h2>5. Danh sách nốt</h2>
+      <h2>7. Danh sách nốt</h2>
+      <div class="tabs" id="track-tabs"></div>
       <div class="table-scroll">
         <table id="notes-table">
           <thead>
@@ -96,7 +138,7 @@
               <th>Kết thúc (s)</th>
               <th>Độ dài (s)</th>
               <th>Beat</th>
-              <th>Confidence</th>
+              <th>Model score</th>
             </tr>
           </thead>
           <tbody id="notes-table-body"></tbody>
@@ -105,10 +147,9 @@
     </section>
 
     <section id="section-download" class="card" hidden>
-      <h2>6. Tải kết quả</h2>
+      <h2>8. Tải kết quả</h2>
+      <div class="form-actions" id="download-buttons"></div>
       <div class="form-actions">
-        <a id="btn-download-midi" class="btn-primary" download>Tải file MIDI</a>
-        <a id="btn-download-json" class="btn-secondary" download>Tải file JSON</a>
         <button type="button" id="btn-new-analysis" class="btn-secondary">Phân tích file mới</button>
       </div>
     </section>

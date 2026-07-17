@@ -7,3 +7,14 @@ soundfile==0.12.1
 pydub==0.25.1
 basic-pitch==0.4.0
 pretty_midi==0.2.11
+
+# Piano Accurate mode: dedicated polyphonic piano transcription (ByteDance/Kong et al.)
+# CPU-only wheel — install from the PyTorch CPU index:
+#   pip install torch --index-url https://download.pytorch.org/whl/cpu
+# Model checkpoint (~164MB) must be downloaded manually on Windows — see README
+# ("Cài đặt model Piano Accurate") since the package's built-in auto-download
+# shells out to `wget`, which is not a real binary on Windows.
+torch==2.13.0+cpu
+piano_transcription_inference==0.0.6
+torchlibrosa==0.1.0
+matplotlib==3.10.9

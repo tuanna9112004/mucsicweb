@@ -23,10 +23,15 @@ def analyze(job_id: str, request: AnalyzeRequest, background_tasks: BackgroundTa
     job = _get_job_or_raise(job_id)
     if job.status == JobStatus.RUNNING:
         raise JobAlreadyRunningError("Đã có một tác vụ đang chạy cho job này.")
+    if job_store.has_running_job(exclude_job_id=job_id):
+        raise JobAlreadyRunningError(
+            "Một job khác đang được phân tích — vui lòng đợi hoàn tất trước khi bắt đầu job mới "
+            "(máy chỉ chạy một tác vụ phân tích nặng tại một thời điểm)."
+        )
 
     job.cancel_requested = False
     job.error = None
-    background_tasks.add_task(execute_job, job, request.target_bpm, request.quantize)
+    background_tasks.add_task(execute_job, job, request.analysis_mode, request.target_bpm, request.quantize)
     return {"status": "queued"}
 
 
@@ -61,7 +66,8 @@ def get_job_notes(job_id: str) -> list:
     job = _get_job_or_raise(job_id)
     if job.analysis is None:
         raise JobResultNotReadyError("Job chưa có kết quả phân tích.")
-    return [note.model_dump() for note in job.analysis.notes]
+    full_track = next((t for t in job.analysis.tracks if t.track_type == "full"), None)
+    return [note.model_dump() for note in full_track.notes] if full_track else []
 
 
 @router.post("/api/jobs/{job_id}/cancel")

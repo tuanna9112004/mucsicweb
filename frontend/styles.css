@@ -77,6 +77,24 @@ body {
   border: 1px solid var(--color-error-border);
 }
 
+.banner-info {
+  background: #eef1fd;
+  color: var(--color-primary);
+  border: 1px solid #c9d3f7;
+}
+
+.banner-warning {
+  background: #fff8ec;
+  color: #8a5a00;
+  border: 1px solid #f0d9a6;
+}
+
+.field-hint {
+  margin: -8px 0 14px;
+  font-size: 0.82rem;
+  color: var(--color-muted);
+}
+
 .dropzone {
   border: 2px dashed var(--color-border);
   border-radius: var(--radius);
@@ -259,6 +277,76 @@ button:disabled,
   overflow-x: auto;
   border: 1px solid var(--color-border);
   border-radius: var(--radius);
+}
+
+.table-scroll-short {
+  max-height: 220px;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tab-button {
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--color-border);
+  background: #fff;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.tab-button.tab-active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.pianoroll-legend {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  display: inline-block;
+}
+
+.legend-full {
+  background: #9aa0ab;
+}
+
+.legend-melody {
+  background: #3457d5;
+}
+
+.legend-bass {
+  background: #d5346c;
+}
+
+.pianoroll-scroll {
+  overflow-x: auto;
+  overflow-y: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background: #fafbfc;
+}
+
+#piano-roll-canvas {
+  display: block;
 }
 
 table {

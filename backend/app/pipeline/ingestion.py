@@ -21,6 +21,8 @@ _PROBE_TIMEOUT_SECONDS = 30
 class AudioProbeInfo:
     duration_seconds: float
     format_name: str
+    sample_rate: int = 0
+    channels: int = 0
 
 
 def validate_extension(filename: str, allowed_extensions: tuple[str, ...]) -> None:
@@ -71,7 +73,9 @@ def probe_audio(path: Path) -> AudioProbeInfo:
                 "-v",
                 "error",
                 "-show_entries",
-                "format=duration,format_name",
+                "format=duration,format_name:stream=sample_rate,channels",
+                "-select_streams",
+                "a:0",
                 "-of",
                 "json",
                 str(path),
@@ -93,10 +97,15 @@ def probe_audio(path: Path) -> AudioProbeInfo:
         fmt = data["format"]
         duration_seconds = float(fmt["duration"])
         format_name = fmt.get("format_name", "")
+        streams = data.get("streams", [])
+        sample_rate = int(streams[0]["sample_rate"]) if streams and "sample_rate" in streams[0] else 0
+        channels = int(streams[0]["channels"]) if streams and "channels" in streams[0] else 0
     except (json.JSONDecodeError, KeyError, ValueError) as exc:
         raise FileUnreadableError("Không đọc được thông tin định dạng của file âm thanh.") from exc
 
-    return AudioProbeInfo(duration_seconds=duration_seconds, format_name=format_name)
+    return AudioProbeInfo(
+        duration_seconds=duration_seconds, format_name=format_name, sample_rate=sample_rate, channels=channels
+    )
 
 
 def validate_duration(duration_seconds: float, max_seconds: float) -> None:

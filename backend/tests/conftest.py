@@ -42,3 +42,23 @@ def api_client(tmp_path, monkeypatch):
     from app.main import app
 
     return TestClient(app)
+
+
+def make_note(
+    pitch=60,
+    onset=0.0,
+    offset=0.5,
+    model_amplitude=0.9,
+    velocity=90,
+    source_model="basic_pitch",
+):
+    """Helper dùng chung cho test thuần Python (không cần audio thật)."""
+    from app.music.note_models import Note, OriginalTiming
+
+    return Note(
+        pitch_midi=pitch,
+        original=OriginalTiming(onset_seconds=onset, offset_seconds=offset),
+        model_amplitude=model_amplitude,
+        velocity_estimate=velocity,
+        source_model=source_model,
+    )

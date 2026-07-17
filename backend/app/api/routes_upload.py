@@ -1,10 +1,11 @@
+import shutil
 from pathlib import Path
 
 from fastapi import APIRouter, File, UploadFile
 
 from app.api.schemas import UploadResponse
 from app.config import settings
-from app.core.errors import NoFileSelectedError
+from app.core.errors import NoFileSelectedError, PipelineError
 from app.core.job_models import Job, JobStatus, new_job_id
 from app.core.job_store import job_store
 from app.pipeline import ingestion
@@ -25,8 +26,12 @@ def upload(file: UploadFile = File(...)) -> UploadResponse:
 
     size_bytes = ingestion.save_upload(file.file, source_path, settings.MAX_FILE_SIZE_BYTES)
 
-    probe = ingestion.probe_audio(source_path)
-    ingestion.validate_duration(probe.duration_seconds, settings.MAX_DURATION_SECONDS)
+    try:
+        probe = ingestion.probe_audio(source_path)
+        ingestion.validate_duration(probe.duration_seconds, settings.MAX_DURATION_SECONDS)
+    except PipelineError:
+        shutil.rmtree(work_dir, ignore_errors=True)
+        raise
 
     job = Job(
         job_id=job_id,
@@ -36,8 +41,10 @@ def upload(file: UploadFile = File(...)) -> UploadResponse:
         status=JobStatus.UPLOADED,
         duration_seconds=probe.duration_seconds,
         size_bytes=size_bytes,
+        sample_rate=probe.sample_rate,
+        channels=probe.channels,
     )
-    job_store.set(job)
+    job_store.add(job)
 
     return UploadResponse(
         job_id=job_id,

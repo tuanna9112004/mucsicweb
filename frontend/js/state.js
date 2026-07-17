@@ -1,8 +1,9 @@
 export const state = {
   file: null,
   jobId: null,
+  analysisMode: "piano_accurate",
   targetBpm: 138,
-  quantize: "1/8",
+  quantize: "none",
   pollTimerId: null,
 };
 

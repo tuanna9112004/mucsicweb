@@ -21,11 +21,11 @@ export async function uploadFile(file) {
   return parseJsonOrThrow(res);
 }
 
-export async function startAnalysis(jobId, targetBpm, quantize) {
+export async function startAnalysis(jobId, analysisMode, targetBpm, quantize) {
   const res = await fetch(`/api/jobs/${jobId}/analyze`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ target_bpm: targetBpm, quantize }),
+    body: JSON.stringify({ analysis_mode: analysisMode, target_bpm: targetBpm, quantize }),
   });
   return parseJsonOrThrow(res);
 }
@@ -35,15 +35,21 @@ export async function getJobStatus(jobId) {
   return parseJsonOrThrow(res);
 }
 
+export async function getJobNotes(jobId) {
+  const res = await fetch(`/api/jobs/${jobId}/notes`);
+  return parseJsonOrThrow(res);
+}
+
+export async function getAvailableDownloads(jobId) {
+  const res = await fetch(`/api/jobs/${jobId}/downloads`);
+  return parseJsonOrThrow(res);
+}
+
 export async function cancelJob(jobId) {
   const res = await fetch(`/api/jobs/${jobId}/cancel`, { method: "POST" });
   return parseJsonOrThrow(res);
 }
 
-export function midiDownloadUrl(jobId) {
-  return `/api/jobs/${jobId}/download/midi`;
-}
-
-export function jsonDownloadUrl(jobId) {
-  return `/api/jobs/${jobId}/download/json`;
+export function downloadUrl(jobId, fileType) {
+  return `/api/jobs/${jobId}/download/${fileType}`;
 }

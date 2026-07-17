@@ -35,7 +35,7 @@ class Settings:
         default_factory=lambda: {"none": None, "1/4": 1.0, "1/8": 0.5, "1/16": 0.25}
     )
 
-    PIPELINE_VERSION: str = "1.0.0"
+    PIPELINE_VERSION: str = "2.0.0"
 
 
 settings = Settings()

@@ -20,10 +20,10 @@ class StepKey(str, Enum):
     CHECK_FILE = "check_file"
     NORMALIZE = "normalize"
     TEMPO_BEATS = "tempo_beats"
-    MELODY_ANALYSIS = "melody_analysis"
-    NOTES_CONVERSION = "notes_conversion"
-    CLEAN_NOTES = "clean_notes"
-    QUANTIZE = "quantize"
+    TRANSCRIBE = "transcribe"
+    DERIVE_TRACKS = "derive_tracks"
+    HARMONY = "harmony"
+    QUANTIZE_RETIME = "quantize_retime"
     EXPORT = "export"
 
 
@@ -31,10 +31,10 @@ STEP_LABELS: dict[StepKey, str] = {
     StepKey.CHECK_FILE: "Đang kiểm tra file",
     StepKey.NORMALIZE: "Đang chuẩn hóa âm thanh",
     StepKey.TEMPO_BEATS: "Đang phát hiện tempo và beat",
-    StepKey.MELODY_ANALYSIS: "Đang phân tích giai điệu",
-    StepKey.NOTES_CONVERSION: "Đang chuyển thành nốt MIDI",
-    StepKey.CLEAN_NOTES: "Đang làm sạch nốt",
-    StepKey.QUANTIZE: "Đang căn nốt theo beat",
+    StepKey.TRANSCRIBE: "Đang nhận diện nốt nhạc (transcription)",
+    StepKey.DERIVE_TRACKS: "Đang tách track giai điệu / bass",
+    StepKey.HARMONY: "Đang phân tích hợp âm và tông",
+    StepKey.QUANTIZE_RETIME: "Đang căn nốt theo beat và đổi tempo",
     StepKey.EXPORT: "Đang tạo file kết quả",
 }
 
@@ -56,11 +56,12 @@ class Job:
     status: JobStatus = JobStatus.UPLOADED
     duration_seconds: float = 0.0
     size_bytes: int = 0
+    sample_rate: int = 0
+    channels: int = 0
     current_step_index: int = -1
     error: Optional[ErrorInfo] = None
     analysis: Optional[AnalysisResult] = None
-    midi_path: Optional[Path] = None
-    json_path: Optional[Path] = None
+    output_files: dict[str, Path] = field(default_factory=dict)
     cancel_requested: bool = False
     created_at: float = field(default_factory=time.time)
     started_at: Optional[float] = None

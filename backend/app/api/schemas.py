@@ -4,40 +4,100 @@ from pydantic import BaseModel, Field
 
 
 class NoteModel(BaseModel):
-    note: str
-    midi_number: int
-    start_time_seconds: float
-    end_time_seconds: float
-    duration_seconds: float
-    start_beat: float
-    duration_beats: float
-    velocity: int
-    confidence: float
-    quantized: bool
-    start_beat_raw: float
+    pitch_midi: int
+    note_name: str
+
+    onset_seconds_original: float
+    offset_seconds_original: float
+    duration_seconds_original: float
+
+    onset_beat_raw: float
     duration_beats_raw: float
+    onset_beat_quantized: float
+    duration_beats_quantized: float
+
+    onset_seconds_target: float
+    offset_seconds_target: float
+
+    model_score: float
+    velocity_estimate: int
+    source_model: str
+
+    quantized: bool
     merged: bool
 
 
-class AnalysisResult(BaseModel):
-    original_filename: str
-    duration_seconds: float
-    detected_bpm: float
-    target_bpm: int
-    time_signature: str = "4/4"
-    estimated_key: str | None = None
-    quantization: Literal["none", "1/4", "1/8", "1/16"]
+class TrackModel(BaseModel):
+    track_type: Literal["full", "melody", "bass", "monophonic_melody"]
     note_count: int
-    processing_status: Literal["completed", "failed"]
-    pipeline_version: str = "1.0.0"
-    analysis_method: dict
-    warnings: list[str] = Field(default_factory=list)
     notes: list[NoteModel]
 
 
+class ChordSpanModel(BaseModel):
+    start_time_seconds: float
+    end_time_seconds: float
+    chord: str
+    root: str | None
+    bass: str | None
+    notes: list[str]
+    confidence: float
+
+
+class BpmCandidateModel(BaseModel):
+    bpm: float
+    score: float
+
+
+class RhythmModel(BaseModel):
+    detected_bpm: float | None
+    bpm_candidates: list[BpmCandidateModel]
+    beat_times_seconds: list[float]
+    downbeat_times_seconds: list[float]
+    time_signature: str | None
+    confidence: float | None
+
+
+class HarmonyModel(BaseModel):
+    key: str | None
+    relative_key: str | None
+    confidence: float | None
+    chords: list[ChordSpanModel]
+
+
+class QualityReportModel(BaseModel):
+    polyphonic: bool
+    maximum_polyphony: int
+    average_model_score: float | None
+    low_score_note_count: int
+    manual_review_recommended: bool
+    warnings: list[str] = Field(default_factory=list)
+
+
+class MetadataModel(BaseModel):
+    filename: str
+    duration_seconds: float
+    sample_rate: int
+    channels: int
+    analysis_mode: Literal["piano_accurate", "melody_quick"]
+    pipeline_version: str
+    target_bpm: float | None
+    quantization: Literal["none", "1/4", "1/8", "1/16", "1/8T", "1/16T"]
+
+
+class AnalysisResult(BaseModel):
+    schema_version: str = "2.0"
+    metadata: MetadataModel
+    rhythm: RhythmModel
+    harmony: HarmonyModel
+    tracks: list[TrackModel]
+    quality_report: QualityReportModel
+
+
 class AnalyzeRequest(BaseModel):
-    target_bpm: int = Field(ge=135, le=140, default=138)
-    quantize: Literal["none", "1/4", "1/8", "1/16"] = "none"
+    analysis_mode: Literal["piano_accurate", "melody_quick"] = "piano_accurate"
+    # None = giữ nguyên tempo gốc, không retime.
+    target_bpm: float | None = Field(default=138, ge=60, le=220)
+    quantize: Literal["none", "1/4", "1/8", "1/16", "1/8T", "1/16T"] = "none"
 
 
 class UploadResponse(BaseModel):
@@ -50,6 +110,7 @@ class UploadResponse(BaseModel):
 class HealthResponse(BaseModel):
     ffmpeg_found: bool
     ffprobe_found: bool
+    piano_model_available: bool
 
 
 class StepStatusModel(BaseModel):

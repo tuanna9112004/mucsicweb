@@ -8,7 +8,12 @@ from app.pipeline.pipeline import run_pipeline
 logger = logging.getLogger(__name__)
 
 
-def execute_job(job: Job, target_bpm: int, quantize_mode: str) -> None:
+def execute_job(
+    job: Job,
+    analysis_mode: str,
+    target_bpm: float | None,
+    quantize_mode: str,
+) -> None:
     """Chạy pipeline phân tích cho một job và cập nhật trạng thái/tiến trình của
     job đó tại chỗ. Được gọi từ FastAPI BackgroundTasks — job là đối tượng dùng
     chung với job_store nên các cập nhật ở đây được phản ánh ngay khi client poll.
@@ -29,14 +34,16 @@ def execute_job(job: Job, target_bpm: int, quantize_mode: str) -> None:
             source_path=job.source_path,
             work_dir=job.work_dir,
             original_filename=job.original_filename,
+            analysis_mode=analysis_mode,
             target_bpm=target_bpm,
             quantize_mode=quantize_mode,
+            source_sample_rate=job.sample_rate,
+            source_channels=job.channels,
             on_step=on_step,
             should_cancel=should_cancel,
         )
         job.analysis = result.analysis
-        job.midi_path = result.midi_path
-        job.json_path = result.json_path
+        job.output_files = result.output_files
         job.status = JobStatus.DONE
     except PipelineError as exc:
         job.error = ErrorInfo(code=exc.code, message=exc.user_message)
