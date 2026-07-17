@@ -29,10 +29,11 @@ e:\WebAmNhac\
 │   │   │   ├── job_models.py      # JobStatus enum, Step enum, Job dataclass
 │   │   │   └── job_store.py       # in-memory single-job store + Lock
 │   │   ├── pipeline/
+│   │   │   ├── note_models.py     # dataclass Note dùng chung xuyên suốt pipeline
 │   │   │   ├── ingestion.py       # validate ext/size, save, ffprobe duration/format
 │   │   │   ├── normalization.py   # -> mono 22050Hz WAV chuẩn
 │   │   │   ├── tempo_beats.py     # librosa tempo + beat_track
-│   │   │   ├── melody_extraction.py # Basic Pitch wrapper -> note events + confidence
+│   │   │   ├── melody_extraction.py # Basic Pitch wrapper + skyline melody selection (xem 02-algorithms.md § 4a-pre)
 │   │   │   ├── note_cleanup.py    # merge nốt liền kề cùng cao độ, rồi lọc nốt quá ngắn
 │   │   │   ├── quantize.py        # snap lưới none/1/4/1/8/1/16 + trim chồng lấn
 │   │   │   ├── retiming.py        # beat-relative -> giây tuyệt đối theo target BPM
