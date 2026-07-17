@@ -28,6 +28,7 @@ Không dùng MP3 có bản quyền. Tạo `tests/fixtures/generate_fixture.py`:
 - Fade in/out 10ms mỗi nốt.
 - Ghép các nốt tại **thời điểm beat đã biết trước chính xác** — tự bản thân tham số synthesis là ground-truth để assert.
 - Output: `synth_melody_120bpm.wav` (~5 giây), **sinh 1 lần và commit vào git** (hoàn toàn tự tạo, không vướng bản quyền) kèm script generator để tái tạo lại nếu cần.
+- **Lưu ý quan trọng đã phát hiện khi implement**: tín hiệu tổng hợp hoàn toàn sạch (không nhiễu) khiến `librosa.beat.beat_track` bị suy biến (trả về 0 beat) do onset-strength envelope quá đều đặn về mặt số học. Fixture phải có thêm noise floor nhỏ (σ≈0.005, xem `generate_fixture.py`) để mô phỏng bản thu thật — đã xác minh qua debug thủ công, không phải lỗi thuật toán (thuật toán hoạt động đúng và ổn định trên audio thật).
 
 ## Checklist thủ công (không tự động hóa, thực hiện ở cuối mỗi stage liên quan)
 
