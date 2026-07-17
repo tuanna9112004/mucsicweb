@@ -8,6 +8,8 @@ e:\WebAmNhac\
 ├── .claude/plan/                  # tài liệu này
 ├── .gitignore                     # .venv/, __pycache__/, uploads/, *.pyc
 ├── README.md                      # hướng dẫn cài đặt & chạy
+├── samples/                       # file audio thật để test thủ công end-to-end (không phải pytest fixture)
+│   └── jtwayne-pianos-by-jtwayne-7-174717.mp3  # piano đơn, 18.86s, 603KB
 ├── backend/
 │   ├── requirements.txt
 │   ├── requirements-dev.txt       # pytest, pytest-asyncio, httpx, ruff
