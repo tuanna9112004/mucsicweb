@@ -63,6 +63,8 @@ class Job:
     json_path: Optional[Path] = None
     cancel_requested: bool = False
     created_at: float = field(default_factory=time.time)
+    started_at: Optional[float] = None
+    finished_at: Optional[float] = None
 
 
 def new_job_id() -> str:

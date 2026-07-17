@@ -1,4 +1,5 @@
 import logging
+import time
 
 from app.core.errors import PipelineError
 from app.core.job_models import ErrorInfo, Job, JobStatus, STEP_ORDER
@@ -14,6 +15,8 @@ def execute_job(job: Job, target_bpm: int, quantize_mode: str) -> None:
     """
     job.status = JobStatus.RUNNING
     job.current_step_index = -1
+    job.started_at = time.time()
+    job.finished_at = None
 
     def on_step(step) -> None:
         job.current_step_index = STEP_ORDER.index(step)
@@ -47,3 +50,5 @@ def execute_job(job: Job, target_bpm: int, quantize_mode: str) -> None:
             code="ANALYSIS_ERROR", message="Đã xảy ra lỗi không xác định khi phân tích file."
         )
         job.status = JobStatus.ERROR
+    finally:
+        job.finished_at = time.time()

@@ -37,6 +37,10 @@ def get_job_status(job_id: str) -> JobStatusResponse:
         progress_pct = round((job.current_step_index + 1) / len(STEP_ORDER) * 100)
         progress_pct = max(0, min(100, progress_pct))
 
+    processing_time_seconds = None
+    if job.started_at is not None and job.finished_at is not None:
+        processing_time_seconds = job.finished_at - job.started_at
+
     return JobStatusResponse(
         job_id=job.job_id,
         status=job.status.value,
@@ -44,6 +48,7 @@ def get_job_status(job_id: str) -> JobStatusResponse:
         progress_pct=progress_pct,
         error=ErrorInfoModel(code=job.error.code, message=job.error.message) if job.error else None,
         result_summary=job.analysis,
+        processing_time_seconds=processing_time_seconds,
     )
 
 

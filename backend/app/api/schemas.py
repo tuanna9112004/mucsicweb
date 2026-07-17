@@ -70,3 +70,4 @@ class JobStatusResponse(BaseModel):
     progress_pct: int
     error: ErrorInfoModel | None = None
     result_summary: AnalysisResult | None = None
+    processing_time_seconds: float | None = None
