@@ -62,12 +62,13 @@ e:\WebAmNhac\
     ├── index.html
     ├── styles.css
     └── js/
+        ├── app.js         # entry point (nạp qua <script type="module">) — nối tất cả module còn lại
         ├── api.js         # fetch wrappers: upload/analyze/poll/download
-        ├── state.js       # state object nhỏ + render()
-        ├── dropzone.js    # drag/drop + validate phía client
-        ├── player.js      # gắn <audio> với file đã chọn
+        ├── state.js       # state object nhỏ + resetState()
+        ├── dropzone.js    # drag/drop + validate phía client (extension/size)
+        ├── player.js      # gắn <audio> với file đã chọn qua URL.createObjectURL
         ├── stepper.js     # render các bước pipeline từ job status
-        ├── noteTable.js   # render bảng nốt (raw vs quantized)
+        ├── noteTable.js   # render bảng nốt
         └── errors.js      # map mã lỗi -> thông báo cho người dùng
 ```
 
