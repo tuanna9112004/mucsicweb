@@ -6,3 +6,6 @@ uploads/
 .pytest_cache/
 .ruff_cache/
 backend/debug_output/
+backend/server.pid
+backend/server_stdout.log
+backend/server_stderr.log
