@@ -60,3 +60,18 @@ class OutOfMemoryError(PipelineError):
 class TaskCancelledError(PipelineError):
     code = "TASK_CANCELLED"
     http_status = 499
+
+
+class JobNotFoundError(PipelineError):
+    code = "JOB_NOT_FOUND"
+    http_status = 404
+
+
+class JobAlreadyRunningError(PipelineError):
+    code = "JOB_ALREADY_RUNNING"
+    http_status = 409
+
+
+class JobResultNotReadyError(PipelineError):
+    code = "JOB_RESULT_NOT_READY"
+    http_status = 409

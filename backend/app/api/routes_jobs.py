@@ -1,6 +1,7 @@
-from fastapi import APIRouter, BackgroundTasks, HTTPException
+from fastapi import APIRouter, BackgroundTasks
 
 from app.api.schemas import AnalyzeRequest, ErrorInfoModel, JobStatusResponse
+from app.core.errors import JobAlreadyRunningError, JobNotFoundError, JobResultNotReadyError
 from app.core.job_models import JobStatus, STEP_ORDER, build_step_statuses
 from app.core.job_runner import execute_job
 from app.core.job_store import job_store
@@ -10,13 +11,18 @@ router = APIRouter()
 _JOB_NOT_FOUND_MESSAGE = "Job không tồn tại hoặc đã hết hạn (server có thể đã khởi động lại)."
 
 
-@router.post("/api/jobs/{job_id}/analyze")
-def analyze(job_id: str, request: AnalyzeRequest, background_tasks: BackgroundTasks) -> dict:
+def _get_job_or_raise(job_id: str):
     job = job_store.get(job_id)
     if job is None:
-        raise HTTPException(status_code=404, detail=_JOB_NOT_FOUND_MESSAGE)
+        raise JobNotFoundError(_JOB_NOT_FOUND_MESSAGE)
+    return job
+
+
+@router.post("/api/jobs/{job_id}/analyze")
+def analyze(job_id: str, request: AnalyzeRequest, background_tasks: BackgroundTasks) -> dict:
+    job = _get_job_or_raise(job_id)
     if job.status == JobStatus.RUNNING:
-        raise HTTPException(status_code=409, detail="Đã có một tác vụ đang chạy cho job này.")
+        raise JobAlreadyRunningError("Đã có một tác vụ đang chạy cho job này.")
 
     job.cancel_requested = False
     job.error = None
@@ -26,9 +32,7 @@ def analyze(job_id: str, request: AnalyzeRequest, background_tasks: BackgroundTa
 
 @router.get("/api/jobs/{job_id}", response_model=JobStatusResponse)
 def get_job_status(job_id: str) -> JobStatusResponse:
-    job = job_store.get(job_id)
-    if job is None:
-        raise HTTPException(status_code=404, detail=_JOB_NOT_FOUND_MESSAGE)
+    job = _get_job_or_raise(job_id)
 
     steps = build_step_statuses(job.current_step_index, job.status)
     if job.status == JobStatus.DONE:
@@ -54,18 +58,14 @@ def get_job_status(job_id: str) -> JobStatusResponse:
 
 @router.get("/api/jobs/{job_id}/notes")
 def get_job_notes(job_id: str) -> list:
-    job = job_store.get(job_id)
-    if job is None:
-        raise HTTPException(status_code=404, detail=_JOB_NOT_FOUND_MESSAGE)
+    job = _get_job_or_raise(job_id)
     if job.analysis is None:
-        raise HTTPException(status_code=409, detail="Job chưa có kết quả phân tích.")
+        raise JobResultNotReadyError("Job chưa có kết quả phân tích.")
     return [note.model_dump() for note in job.analysis.notes]
 
 
 @router.post("/api/jobs/{job_id}/cancel")
 def cancel_job(job_id: str) -> dict:
-    job = job_store.get(job_id)
-    if job is None:
-        raise HTTPException(status_code=404, detail=_JOB_NOT_FOUND_MESSAGE)
+    job = _get_job_or_raise(job_id)
     job.cancel_requested = True
     return {"status": "cancel_requested"}

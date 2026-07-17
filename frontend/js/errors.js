@@ -11,6 +11,10 @@ const ERROR_MESSAGES = {
   MIDI_EXPORT_FAILED: "Không thể tạo file MIDI từ kết quả phân tích.",
   OUT_OF_MEMORY: "Không đủ bộ nhớ để xử lý file này. Hãy thử một file ngắn hơn.",
   TASK_CANCELLED: "Tác vụ đã bị hủy.",
+  JOB_NOT_FOUND:
+    "Không tìm thấy phiên làm việc này — có thể server đã khởi động lại. Vui lòng tải file lên lại.",
+  JOB_ALREADY_RUNNING: "Đã có một tác vụ đang chạy, vui lòng đợi hoàn tất.",
+  JOB_RESULT_NOT_READY: "Kết quả phân tích chưa sẵn sàng.",
 };
 
 export function describeError(code, fallbackMessage) {

@@ -26,6 +26,16 @@ Thứ tự ingestion (rẻ → đắt): kiểm tra extension → đếm byte khi
 | 10 | Không đủ bộ nhớ | Giới hạn 30MB/90s là phòng ngừa chính; bắt `MemoryError` ở biên pipeline runner. **Giới hạn đã biết**: OOM native thật trên Windows có thể crash hẳn uvicorn worker thay vì raise exception sạch — đã ghi nhận, không hứa hẹn quá mức | `OUT_OF_MEMORY` / 507 |
 | 11 | Tác vụ bị hủy | Cờ cooperative kiểm tra giữa các stage (không ngắt giữa lúc basic-pitch đang infer) | `TASK_CANCELLED`, thể hiện qua job status, không phải lỗi HTTP trên chính `/cancel` |
 
+## Mã lỗi bổ sung ngoài 11 trường hợp gốc (phát hiện khi implement Stage 4/6)
+
+Ngoài 11 lỗi bắt buộc trong spec, tầng job/API cần thêm các lỗi vòng đời job — nếu không, các endpoint `analyze`/`notes`/`cancel`/`download/*` sẽ phải dùng `HTTPException` mặc định của FastAPI (`{"detail": "..."}`), **không khớp** format `{"error": {"code","message"}}` mà frontend `errors.js` cần để hiển thị thông báo đúng (đã phát hiện đây là bug thực tế khi review lại `app.js`, xem [`06-roadmap.md`](06-roadmap.md) Stage 6). Đã thêm vào `core/errors.py` và dùng nhất quán trong mọi route thay vì `HTTPException` trực tiếp:
+
+| Code | HTTP | Ý nghĩa |
+|---|---|---|
+| `JOB_NOT_FOUND` | 404 | job_id không tồn tại trong job_store (vd server đã restart, mất state in-memory) |
+| `JOB_ALREADY_RUNNING` | 409 | Gọi `/analyze` khi job đang ở trạng thái RUNNING |
+| `JOB_RESULT_NOT_READY` | 409 | Gọi `/notes` hoặc `/download/*` trước khi job hoàn tất phân tích |
+
 ## Nguyên tắc thông báo cho người dùng (mục 7.8/7.9 spec)
 
 - Mọi thông báo lỗi phải giải thích ngắn gọn nguyên nhân + hướng xử lý (vd: "Không tìm thấy FFmpeg — vui lòng cài đặt FFmpeg và khởi động lại ứng dụng").

@@ -47,6 +47,9 @@ def test_get_unknown_job_returns_404(api_client):
     response = api_client.get("/api/jobs/does-not-exist")
 
     assert response.status_code == 404
+    body = response.json()
+    assert body["error"]["code"] == "JOB_NOT_FOUND"
+    assert body["error"]["message"]
 
 
 def test_analyze_unknown_job_returns_404(api_client):
@@ -113,9 +116,9 @@ def test_cancel_known_job_returns_200(api_client, synth_melody_path):
     assert response.status_code == 200
 
 
-def test_download_midi_returns_404_before_analysis_done(api_client, synth_melody_path):
+def test_download_midi_returns_409_before_analysis_done(api_client, synth_melody_path):
     job_id = _upload_fixture(api_client, synth_melody_path)
 
     response = api_client.get(f"/api/jobs/{job_id}/download/midi")
 
-    assert response.status_code == 404
+    assert response.status_code == 409
